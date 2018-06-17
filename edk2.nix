@@ -12,7 +12,9 @@ edk2 = stdenv.mkDerivation {
     owner = "tianocore";
     repo = "edk2";
     rev = "vUDK2018";
-    sha256 = "0ll4xik9xw5spzcwnm5h34i8y6yag1nng8j55ji8jqiwrf94x23f";
+    sha256 = "12d79g48fdpbdb1jh9k5blajvg4r63b0m2nsiiml3dlnf3jiakw0";
+    #sha256 = "1ll4xik9xw5spzcwnm5h34i8y6yag1nng8j55ji8jqiwrf94x23f"; no submodules
+    fetchSubmodules = true;
   };
 
   buildInputs = [ libuuid pythonEnv ];

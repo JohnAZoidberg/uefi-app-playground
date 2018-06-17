@@ -84,6 +84,10 @@
   ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
 
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
+  # OpenSSL
+  BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+  OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
+  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
 
 ###################################################################################################
 #
@@ -107,7 +111,8 @@
 [Components]
 
 #### Sample Applications.
-  FileIoPkg/Applications/FileIo/FileIo.inf          # Simple invocation. No other LibC functions.
+  FileIoPkg/Applications/FileIo/FileIo.inf
+  FileIoPkg/Applications/Verify/Verify.inf
 
 
 ##############################################################################

@@ -8,6 +8,9 @@ and build them using [EDKII](https://github.com/tianocore/edk2).
 Prints a hello world message if provided no arguments.
 Reads content of provided file into memory and prints them.
 
+### Verify.efi
+Prints the sha512 hash of the first argument using openssl.
+
 ## Build
 1. Install [Nix]() package manager
 2. Run `nix-build`
