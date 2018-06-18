@@ -1,8 +1,7 @@
 /** @file
-    A simple, basic, EDK II native, "hello" application to verify that
-    we can build applications without LibC.
+    Demo application of using openssl in an EDKII app without LibC.
 
-    Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
+    Copyright (c) 2018 Daniel Schaefer
     This program and the accompanying materials
     are licensed and made available under the terms and conditions of the BSD License
     which accompanies this distribution. The full text of the license may be found at
@@ -21,10 +20,6 @@
 #include <Library/BaseCryptLib.h>
 
 /***
-  Print a welcoming message.
-
-  Establishes the main structure of the application.
-
   @retval  0         The application exited normally.
   @retval  Other     An error occurred.
 ***/
