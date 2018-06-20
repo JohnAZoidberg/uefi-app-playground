@@ -1,6 +1,8 @@
 /** @file
-    Demo application of using openssl in an EDKII app without LibC.
+    A simple, basic, EDK II native, "hello" application to verify that
+    we can build applications without LibC.
 
+    Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
     Copyright (c) 2018 Daniel Schaefer
     This program and the accompanying materials
     are licensed and made available under the terms and conditions of the BSD License
@@ -13,13 +15,79 @@
 #include <Uefi.h>
 #include <Library/UefiLib.h>
 #include <Library/ShellCEntryLib.h>
+#include <Library/ShellLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseCryptLib.h>
 
+BOOLEAN Hash(UINTN DataSize, IN VOID *Data, OUT UINT8 *HashValue)
+{
+  BOOLEAN  Status;
+  VOID    *HashCtx = NULL;
+  UINTN    CtxSize = Sha512GetContextSize ();
+
+  HashCtx = AllocatePool (CtxSize);
+  if (HashCtx != NULL)
+    Print(L"%d bytes for HashCtx allocated\n", CtxSize);
+  Status = Sha512Init (HashCtx);
+  if (Status == 1)
+    Print(L"Sha512 inited\n");
+  Status = Sha512Update (HashCtx, Data, DataSize);
+  if (Status == 1)
+    Print(L"Sha512 updated\n");
+  Status = Sha512Final (HashCtx, HashValue);
+  if (Status == 1)
+    Print(L"Sha512 finaled\n");
+
+  if (HashCtx != NULL) {
+    FreePool (HashCtx);
+  }
+  return Status;
+}
+
+VOID PrintHex(
+  IN UINT8 *HashValue
+  )
+{
+    UINT8 I;
+    for(I = 0; I < SHA512_DIGEST_SIZE; I++) {
+      Print(L"%02x", HashValue[I]);
+    }
+    Print(L"\n");
+}
+
+VOID PrintCertSubject(
+  IN UINT8  *Cert,
+  IN UINTN CertLen
+  )
+{
+  UINT8 *Subject;
+  UINTN  SubjectSize = 0;
+
+  // Get size of subject
+  BOOLEAN Err = X509GetSubjectName (Cert, CertLen, NULL, &SubjectSize);
+  Print(L"SubjectSize: %d\n", SubjectSize);
+  if (!Err) {
+    Print(L"Couldn't read subjectlen of cert.\n");
+  }
+
+  Subject = AllocateZeroPool (SubjectSize);
+  Err = X509GetSubjectName (Cert, CertLen, Subject, &SubjectSize);
+  Print(L"SubjectSize: %d\n", SubjectSize);
+  if (!Err) {
+    Print(L"Couldn't read subject of cert.\n");
+  }
+
+  Print(L"Subject: %s\n", Subject);
+}
+
 /***
+  Print a welcoming message.
+
+  Establishes the main structure of the application.
+
   @retval  0         The application exited normally.
   @retval  Other     An error occurred.
 ***/
@@ -30,53 +98,72 @@ ShellAppMain (
   IN CHAR16 **Argv
   )
 {
-  if (Argc > 1) {
-    //UINT8    *Data = NULL;
-    CHAR16 *Data;
+  if (Argc == 2) {
+    BOOLEAN Status;
+    UINT8   *HashValue;
     UINTN    DataSize;
-    UINT8    *HashValue;
-    BOOLEAN  Status;
-    VOID     *HashCtx;
-    UINTN    CtxSize;
 
-    Data = Argv[1];
-    Status  = FALSE;
-    HashCtx = NULL;
-
-    DataSize = StrLen (Data);
+    DataSize = StrLen (Argv[1]);
     Print(L"DataSize: %d\n", DataSize);
-
     HashValue = AllocatePool (SHA512_DIGEST_SIZE);
     Print(L"Allocated %d bytes for HashValue\n", SHA512_DIGEST_SIZE);
 
-    CtxSize = Sha512GetContextSize ();
-    HashCtx = AllocatePool (CtxSize);
-    if (HashCtx != NULL)
-      Print(L"%d bytes for HashCtx allocated\n", CtxSize);
-    Status = Sha512Init   (HashCtx);
-    if (Status == TRUE)
-      Print(L"Sha512 inited\n");
-    Status = Sha512Update (HashCtx, Data, DataSize);
-    if (Status == TRUE)
-      Print(L"Sha512 updated\n");
-    Status = Sha512Final  (HashCtx, HashValue);
-    if (Status == TRUE)
-      Print(L"Sha512 finaled\n");
-
-    Print(L"Hash of %s is ", Data);
-    int i;
-    for(i = 0; i < SHA512_DIGEST_SIZE; i++) {
-      Print(L"%02x", HashValue[i]);
-    }
-    Print(L"\n");
-
-    if (HashCtx != NULL) {
-      FreePool (HashCtx);
-    }
-
+    Status = Hash (DataSize, Argv[1], HashValue);
+    PrintHex (HashValue);
+    FreePool (HashValue);
     Status = Status;  // TODO handle Status properly
+  } else if (Argc == 3) {
+    SHELL_FILE_HANDLE FileHandle;
+    UINTN             FileSize;
+    EFI_STATUS        Status;
+
+    UINT8            *RawCert;
+    UINTN             RawCertLen;
+    UINT8            *RawChain;
+    UINTN             RawChainLen;
+
+    Status = ShellOpenFileByName(
+      Argv[1], &FileHandle, EFI_FILE_MODE_READ, 0
+    );
+    Status = ShellGetFileSize (FileHandle, &FileSize);
+    RawCert = AllocateZeroPool (FileSize + 1);
+    Status = ShellReadFile (FileHandle, &FileSize, RawCert);
+    ShellCloseFile (&FileHandle);
+    RawCertLen = FileSize;
+    //Print(L"RawCert: %s (%d)\n", RawCert, RawCertLen);
+    PrintCertSubject (RawCert, RawCertLen);
+
+    Status = ShellOpenFileByName(
+      Argv[2], &FileHandle, EFI_FILE_MODE_READ, 0
+    );
+    Status = ShellGetFileSize (FileHandle, &FileSize);
+    RawChain = AllocateZeroPool (FileSize + 1);
+    Status = ShellReadFile (FileHandle, &FileSize, RawChain);
+    ShellCloseFile (&FileHandle);
+    RawChainLen = FileSize;
+    //Print(L"RawChain: %s (%d)\n", RawChain, RawChainLen);
+
+    if (NULL == RawChain) Print(L"RawChain is NULL\n");
+    Print(L"RawChainLen: %d\n", RawChainLen);
+    if (NULL == RawCert) Print(L"RawCert is NULL\n");
+    Print(L"RawCertLen: %d\n", RawCertLen);
+    BOOLEAN Result = X509VerifyCert (
+      RawChain, RawChainLen,
+      RawCert, RawCertLen
+    );
+    Print(L"Chain validated: %d\n", Result);
+
+    UINT8   *HashValue = AllocatePool (SHA512_DIGEST_SIZE);
+    Print(L"Allocated %d bytes for HashValue\n", SHA512_DIGEST_SIZE);
+    Status = Hash (FileSize, RawCert, HashValue);
+    PrintHex (HashValue);
+    FreePool (HashValue);
+
+    FreePool (RawCert);
+    Status = Status;
   } else {
-    Print(L"Usage Verify.efi [STRING]\n");
+    Print(L"Usage Verify.efi [String to hash]\n");
+    Print(L"Usage Verify.efi [Root-Cert] [Cert-Chain]\n");
   }
 
   return(0);

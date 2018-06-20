@@ -49,6 +49,7 @@
   UefiApplicationEntryPoint|MdePkg/Library/UefiApplicationEntryPoint/UefiApplicationEntryPoint.inf
   ShellCEntryLib|ShellPkg/Library/UefiShellCEntryLib/UefiShellCEntryLib.inf
   UefiDriverEntryPoint|MdePkg/Library/UefiDriverEntryPoint/UefiDriverEntryPoint.inf
+  ShellLib|ShellPkg/Library/UefiShellLib/UefiShellLib.inf
   #
   # Common Libraries
   #
