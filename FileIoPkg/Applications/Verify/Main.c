@@ -124,16 +124,20 @@ ShellAppMain (
   if (Argc == 2) {
     BOOLEAN Status;
     UINT8   *HashValue;
-    UINTN    DataSize;
 
-    DataSize = StrLen (Argv[1]);
+    UINT8   *Data;
+    UINTN   DataSize;
+
+    Status = ReadFile (Argv[1], &Data, &DataSize);
     Print(L"DataSize: %d\n", DataSize);
     HashValue = AllocatePool (SHA512_DIGEST_SIZE);
     Print(L"Allocated %d bytes for HashValue\n", SHA512_DIGEST_SIZE);
 
-    Status = Hash (DataSize, Argv[1], HashValue);
+    Status = Hash (DataSize, Data, HashValue);
     PrintHex (HashValue);
+
     FreePool (HashValue);
+    FreePool (Data);
     Status = Status;  // TODO handle Status properly
   } else if (Argc == 3) {
     EFI_STATUS        Status;
