@@ -81,6 +81,29 @@ VOID PrintCertSubject(
   }
 
   Print(L"Subject: %s\n", Subject);
+  FreePool (Subject);
+}
+
+EFI_STATUS
+ReadFile (
+  IN  CHAR16 *FileName,
+  OUT UINT8 **Content,
+  OUT UINTN  *ContentLen
+  )
+{
+    SHELL_FILE_HANDLE FileHandle;
+    EFI_STATUS        Status;
+
+    Status = ShellOpenFileByName(
+      FileName, &FileHandle, EFI_FILE_MODE_READ, 0
+    );
+    Status = ShellGetFileSize (FileHandle, ContentLen);
+    // TODO reallocate if we actually need the last byte
+    *Content = AllocateZeroPool (*ContentLen + 1);
+    Status = ShellReadFile (FileHandle, ContentLen, *Content);
+    ShellCloseFile (&FileHandle);
+
+    return Status;
 }
 
 /***
@@ -113,8 +136,6 @@ ShellAppMain (
     FreePool (HashValue);
     Status = Status;  // TODO handle Status properly
   } else if (Argc == 3) {
-    SHELL_FILE_HANDLE FileHandle;
-    UINTN             FileSize;
     EFI_STATUS        Status;
 
     UINT8            *RawCert;
@@ -122,27 +143,16 @@ ShellAppMain (
     UINT8            *RawChain;
     UINTN             RawChainLen;
 
-    Status = ShellOpenFileByName(
-      Argv[1], &FileHandle, EFI_FILE_MODE_READ, 0
-    );
-    Status = ShellGetFileSize (FileHandle, &FileSize);
-    RawCert = AllocateZeroPool (FileSize + 1);
-    Status = ShellReadFile (FileHandle, &FileSize, RawCert);
-    ShellCloseFile (&FileHandle);
-    RawCertLen = FileSize;
+    // Read root cert
+    Status = ReadFile (Argv[1], &RawCert, &RawCertLen);
     //Print(L"RawCert: %s (%d)\n", RawCert, RawCertLen);
     PrintCertSubject (RawCert, RawCertLen);
 
-    Status = ShellOpenFileByName(
-      Argv[2], &FileHandle, EFI_FILE_MODE_READ, 0
-    );
-    Status = ShellGetFileSize (FileHandle, &FileSize);
-    RawChain = AllocateZeroPool (FileSize + 1);
-    Status = ShellReadFile (FileHandle, &FileSize, RawChain);
-    ShellCloseFile (&FileHandle);
-    RawChainLen = FileSize;
+    // Read cert chain
+    Status = ReadFile (Argv[2], &RawChain, &RawChainLen);
     //Print(L"RawChain: %s (%d)\n", RawChain, RawChainLen);
 
+    // Validate full chain
     if (NULL == RawChain) Print(L"RawChain is NULL\n");
     Print(L"RawChainLen: %d\n", RawChainLen);
     if (NULL == RawCert) Print(L"RawCert is NULL\n");
@@ -155,11 +165,12 @@ ShellAppMain (
 
     UINT8   *HashValue = AllocatePool (SHA512_DIGEST_SIZE);
     Print(L"Allocated %d bytes for HashValue\n", SHA512_DIGEST_SIZE);
-    Status = Hash (FileSize, RawCert, HashValue);
+    Status = Hash (RawCertLen, RawCert, HashValue);
     PrintHex (HashValue);
     FreePool (HashValue);
 
     FreePool (RawCert);
+    FreePool (RawChain);
     Status = Status;
   } else {
     Print(L"Usage Verify.efi [String to hash]\n");
