@@ -18,14 +18,16 @@ Prints the SHA-512 hash of the first argument using OpenSSL.
 or
 
 1. Install [Nix](https://nixos.org/nix) package manager
-2. Launch nix-shell with deps: `nix-shell '<nixpkgs> -A OVMF`
-3. `git clone --recursive https://github.com/tianocore/edk2`
-4. `ln -s ../FileIoPkg edk2/`
-5. `source edksetup.sh BaseTools`
-6. `build -a X64 -p FileIoPkg/FileIoPkg.dsc -n$(nproc) -b DEBUG -t GCC5`
+2. `git clone --recursive https://github.com/tianocore/edk2`
+3. Launch nix-shell with deps: `nix-shell -p iasl libuuid "python2.withPackages(ps: [ps.tkinter])"`
+4. `make -C BaseTools`
+5. `ln -s ../FileIoPkg edk2/`
+6. Launch nix-shell with deps: `nix-shell -p nasm iasl openssl` (probably same as `nix-shell '<nixpkgs>' -A OVMF`)
+7. `source edksetup.sh BaseTools`
+8. `build -a X64 -p FileIoPkg/FileIoPkg.dsc -n$(nproc) -b DEBUG -t GCC5`
 
-Step 5 sources environment variables and add the tools to your PATH.
-Step 6 builds the app.
+Step 7 sources environment variables and add the tools to your PATH.
+Step 8 builds the app.
 
 ## Run
 ### On hardware
