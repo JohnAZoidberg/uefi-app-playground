@@ -4,9 +4,11 @@ It shows how easy it is to write UEFI apps (using the C standard library),
 and build them using [EDKII](https://github.com/tianocore/edk2).
 
 ## Demo Apps
-### FileIo.efi (Regular C-style)
+### FileIo.efi (stdlib C-style)
 Prints a hello world message if provided no arguments.
 Reads content of provided file into memory and prints them.
+
+Note: Doesn't work anymore, since StdLib and co were split out to [edk2-libc](https://github.com/tianocore/edk2-libc)
 
 ### Verify.efi (EDKII C-style)
 Prints the SHA-512 hash of the first argument using OpenSSL.
