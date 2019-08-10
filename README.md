@@ -12,22 +12,30 @@ Reads content of provided file into memory and prints them.
 Prints the SHA-512 hash of the first argument using OpenSSL.
 
 ## Build
-1. Install [Nix](https://nixos.org/nix) package manager
-2. Run `nix-build`
+Prerequisites: Install [Nix](https://nixos.org/nix) package manager
 
-or
+```
+# Launch nix-shell with dependencies
+nix-shell
 
-1. Install [Nix](https://nixos.org/nix) package manager
-2. `git clone --recursive https://github.com/tianocore/edk2`
-3. Launch nix-shell with deps: `nix-shell -p iasl libuuid "python2.withPackages(ps: [ps.tkinter])"`
-4. `make -C BaseTools`
-5. `ln -s ../FileIoPkg edk2/`
-6. Launch nix-shell with deps: `nix-shell -p nasm iasl openssl` (probably same as `nix-shell '<nixpkgs>' -A OVMF`)
-7. `source edksetup.sh BaseTools`
-8. `build -a X64 -p FileIoPkg/FileIoPkg.dsc -n$(nproc) -b DEBUG -t GCC5`
+# Initialize EDK2 submodule and go inside
+git submodule update --init
+cd edk2
 
-Step 7 sources environment variables and add the tools to your PATH.
-Step 8 builds the app.
+# Symlink package into EDK2
+ln -s ../FileIoPkg
+
+# Build EDK2 base tools
+make -C BaseTools
+
+# Source EDK2 build system's environment variables
+source edksetup.sh BaseTools
+
+# TODO: Don't we need to build the base tools?
+
+# Build our package
+build -a X64 -p FileIoPkg/FileIoPkg.dsc -n$(nproc) -b DEBUG -t GCC5
+```
 
 ## Run
 ### On hardware
@@ -37,9 +45,10 @@ Step 8 builds the app.
 ### In QEMU
 
 Start up QEMU without network (to prevent PXE boot), custom firmware to force UEFI boot and directory with built executable as FAT partition which is accessible from the UEFI commandline.
+
 ```
 qemu-system-x86_64 -net none \
-    -pflash Build/OvmfX64/DEBUG_GCC5/FV/OVMF.fd  \
+    -pflash Build/OvmfX64/DEBUG_GCC5/FV/OVMF.fd \
     -hda fat:Build/FileIoPkg/DEBUG_GCC5/X64/
 ```
 
